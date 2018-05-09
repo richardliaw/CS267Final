@@ -47,7 +47,7 @@ This project investigates supporting distributed deep learning training, using \
 {\bf Problem setup.} For the remainder of the paper, we constrain the problem setting to neural network (NN) training using multiple machines each equipped with multiple GPUs.  All experiments consider the image classification model, \texttt{ResNet101}~\cite{resnet}, on synthetic dataset with the same format as ImageNet~\cite{imagenet}.  The key performance metric is \textit{throughput}, or total images processed (i.e., a forward and a corresponding backward pass have been performed) per second.
 
 \subsection{Parallelism in Distributed Deep Learning}
-Distributed deep learning was popularized with the introduction of parameter servers ~\cite{param-server}, which are centralized and have state that is updated asynchronously among workers. With this lack of coordination comes a price - the inability to scale infinitely due to process noise introduced by the asynchrony.
+Distributed deep learning was popularized with the introduction of parameter servers~\cite{param-server}, which are centralized and have state that is updated asynchronously among workers. With this lack of coordination comes a price - the inability to scale infinitely due to process noise introduced by the asynchrony.
 
 Recent work has moved towards using synchronous updates for SGD as seen in Horovod~\cite{horovod}, utilizing a variety of high performance computing techniques (i.e., allreduce) along with novel parameter tuning to come up with new implementations of SGD to use both more machines and achieve faster learning.
 
