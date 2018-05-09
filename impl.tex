@@ -1,7 +1,7 @@
-\section{Implementation and Optimizations}
+\section{Implementation}
 We first started by benchmarking Distributed TF (using its \texttt{distributed\_replicated} mode), and Horovod. We used AWS p3.16xlarge instances for this, and found that Horovod scales as reported to 6k images per second at 64 GPUs (about 93 images per second per GPU). Distributed TF scaled to 6.5k images per second (about 100 images per second per GPU). Note that on a single node, both implementations can achieve around 200 images per second.
 
-We started with the same ResNet101 model as used by the TF benchmarks, and verified that it could also achieve 200 images per second on a single node. The single node case can be understood as just the gradient and NCCL (intra-node) allreduce components seen in Figure \ref{fig:pipeline}. Our approach for the distributed setting was to use parameter server actors in Ray.
+We started with the same ResNet101 model as used by the TF benchmarks, and verified that it could also achieve 200 images per second on a single node. The single node case can be understood as just the gradient and NCCL (intra-node) allreduce components seen in Figure \ref{fig:pipeline}. Our approach for the distributed setting was to use parameter server Ray actors to manage gradient aggregation between the Ray SGD actors that held the model replicas.
 
 \begin{figure}
     \centering
@@ -9,7 +9,7 @@ We started with the same ResNet101 model as used by the TF benchmarks, and verif
     \includegraphics[width=5.1in,keepaspectratio]{fig/pipeline.pdf}
     \caption{
     \small{
-        Timeline of distributed SGD with a sharded parameter server implemented in Ray. The computation starts with the forward pass on GPUs. Gradients are produced by the backwards passed and averaged across GPUs via NCCL allreduce. As these intra-node allreduces finish, the averaged gradients are written to Ray's object store (TFToPlasma), where they are averaged across nodes by parameter server actors. The SGD actors then read back the averaged gradients from the parameter server actors (PlasmaToTF) and apply the gradients to their local model replica.
+        Timeline of our distributed SGD using a sharded parameter server implemented in Ray. The computation starts with the forward pass on GPUs. Gradients are produced by the backwards passed and averaged across GPUs via NCCL allreduce. As these intra-node allreduces finish, the averaged gradients are written to Ray's object store (TFToPlasma), where they are averaged across nodes by parameter server actors. The SGD actors then read back the averaged gradients from the parameter server actors (PlasmaToTF) and apply the gradients to their local model replica.
     }
     }
     \label{fig:pipeline}
@@ -31,7 +31,7 @@ The above discussion assumes Tensor buffers reside on GPUs.  For CPU-owned Tenso
 
 \subsection{Pipelining Computation with Communication}
 
-We emphasize that, the above pipelining optimization is performed at the Ray level.  TensorFlow, the compute engine that launches CUDA kernels onto the GPUs, has implemented such pipelining at the device level.  Specifically, it uses at least 3 CUDA streams to dispatch kernels: a main stream for compute, a host-to-device copy stream, and a device-to-host copy stream.  Therefore, within a device, the communication and computation are already pipelined (up to black-box constraints imposed by the hardware).
+We emphasize that, the above pipelining optimization is performed at the Ray level---that is, using Ray async actor method calls in the standard Ray programming model.  TensorFlow, the compute engine that launches CUDA kernels onto the GPUs, has implemented such pipelining at the device level.  Specifically, it uses at least 3 CUDA streams to dispatch kernels: a main stream for compute, a host-to-device copy stream, and a device-to-host copy stream.  Therefore, within a device, the communication and computation are already pipelined (up to black-box constraints imposed by the hardware).
 
 
 As seen the above Figure~\ref{fig:pipeline}, all cross network pipelining of computation is handled outside TensorFlow.

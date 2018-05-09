@@ -1,11 +1,11 @@
 \section{Evaluation}
-All experiments were run on Amazon EC2 using the p3.16xlarge instances.  Each instance has 8 Tesla V100 GPUs with 25Gbps Ethernet bandwidth.  When possible, we launched instances in a placement group for faster inter-node network connection.  We conducted the following experiments:
+All experiments were run on Amazon EC2 using the p3.16xlarge instances.  Each instance has 8 Tesla V100 GPUs with 25Gbps Ethernet bandwidth. We conducted the following experiments:
 
 \begin{enumerate}
-    \item An end-to-end macrobencmark measuring training throughput, for all three systems, utilizing up to 16 distinct instances (Figure~\ref{fig:sgd}).
+    \item An end-to-end macrobenchmark measuring training throughput, for all three systems, utilizing up to 16 distinct instances (Figure~\ref{fig:sgd}).
     \item A microbenchmark that evaluates how how much of a bottleneck the datacenter network between nodes is (Figure~\ref{fig:infnet}).
-    \item A microbenchmark that investigates a key limitation of our implementation: that using 8 GPUs per node yields worse scaling than using 4 GPUs per node, keeping the total number of GPUs constant (Figure~\ref{fig:8-vs-4-gpu}).
-    \item A microbenchmark that investigates the best all-reduce strategies to use, within a node (Figure~\ref{fig:intra-node-allreduce-strategy}).
+    \item A microbenchmark that investigates the optimal number of GPUs per node. We find that using 8 GPUs per node yields worse scaling than using 4 GPUs per node, keeping the total number of GPUs constant (Figure~\ref{fig:8-vs-4-gpu}).
+    \item A microbenchmark that investigates the best all-reduce strategy to use within a node (Figure~\ref{fig:intra-node-allreduce-strategy}).
 \end{enumerate}
 
 % \subsection{Single-Node Multi GPU SGD}
@@ -57,9 +57,10 @@ benefits of using twice as many processors.
 Second, for our Ray implementation, using 8 GPUs per node (red bars) scales
 noticeably worse than using 4 GPUs per node (blue bars), while fixing the total
 number of GPUs fixed.  The former cases make use of less number of machines, so
-cross-node communication should actually be faster than the latter cases.  For
-this reason, we hypothesize that the bottleneck stems from the intra-node
-codepath.
+cross-node communication should actually be faster than the latter cases.  We
+believe that optimizing intra-node allreduce could lead to future performance improvements,
+however it is non-trivial in practice due to intricate interactions with the TensorFlow
+and CUDA schedulers.
 
 \subsection{Intra-node Allreduce Strategies}
 Figure~\ref{fig:intra-node-allreduce-strategy} compares two implementations of

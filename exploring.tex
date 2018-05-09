@@ -2,7 +2,7 @@
 
 Our goal is to match or exceed the performance of current state of the art frameworks. Horovod is a popular distributed SGD implementation which claims near linear scalability to 128 GPUs. They do this by leveraging the ring-allreduce algorithm to synchronize gradients between workers. The algorithm is roughly as follows:
 
-\textbf{Pseudocode.}
+%\textbf{Pseudocode.}
 \begin{algorithm}
 \scriptsize
 \caption{All-Reduce SGD}
@@ -33,7 +33,7 @@ Barrier\;
 
 Distributed TensorFlow offers a variety of different distributed SGD implementations. For benchmarking we use a synchronized parameter server to reduce across nodes and an averaging scheme within node across GPUs. The algorithm is roughly as follows:
 
-\textbf{Pseudocode.}
+%\textbf{Pseudocode.}
 \begin{algorithm}
 \caption{Synchronous Parameter Server SGD}
 \KwData{Input Data, K Nodes}
