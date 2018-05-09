@@ -2,16 +2,10 @@
 All experiments were run on Amazon EC2 using the p3.16xlarge instances.  Each instance has 8 Tesla V100 GPUs with 25Gbps Ethernet bandwidth.  When possible, we launched instances in a placement group for faster inter-node network connection.  We conducted the following experiments:
 
 \begin{enumerate}
-<<<<<<< HEAD
-    \item An end-to-end macrobencmark measuring training througput, for all three systems, utilizing up to 16 distinct instances (Figure~\ref{fig:sgd}).
-    \item A microbenchmark that evaluates how how much of a bottleneck the datacenter network between nodes is (Figure~\ref{fig:infnet}).
-    \item A microbenchmark that investigates intra-node allreduce performance. We find that at 8 GPUs per node, intra-node allreduce worse scaling than using 4 GPUs per node, keeping the total number of GPUs constant (Figure~\ref{fig:8-vs-4-gpu}).
-    \item A microbenchmark that investigates the best intra-node all-reduce strategies to use (Figure~\ref{fig:intra-node-allreduce-strategy}).
-=======
     \item An end-to-end macrobencmark measuring training throughput, for all three systems, utilizing up to 16 distinct instances (Figure~\ref{fig:sgd}).
+    \item A microbenchmark that evaluates how how much of a bottleneck the datacenter network between nodes is (Figure~\ref{fig:infnet}).
     \item A microbenchmark that investigates a key limitation of our implementation: that using 8 GPUs per node yields worse scaling than using 4 GPUs per node, keeping the total number of GPUs constant (Figure~\ref{fig:8-vs-4-gpu}).
     \item A microbenchmark that investigates the best all-reduce strategies to use, within a node (Figure~\ref{fig:intra-node-allreduce-strategy}).
->>>>>>> f043f8cab84cf15f4b9c62522ba43a1a140a976e
 \end{enumerate}
 
 % \subsection{Single-Node Multi GPU SGD}
