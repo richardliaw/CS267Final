@@ -49,7 +49,7 @@ This project investigates supporting distributed deep learning training, using \
 \subsection{Parallelism in Distributed Deep Learning}
 Distributed deep learning was popularized with the introduction of parameter servers ~\cite{param-server}, which are centralized and have state that is updated asynchronously among workers. With this lack of coordination comes a price - the inability to scale infinitely due to process noise introduced by the asynchrony.
 
-Recent work has moved towards using synchronous updates for SGD as seen in Horovod~\cite{horovod}, utilizing a variety of high performance computing techniques (ie, allreduce) along with novel parameter tuning to come up with new implementations of SGD to use both more machines and achieve faster learning.
+Recent work has moved towards using synchronous updates for SGD as seen in Horovod~\cite{horovod}, utilizing a variety of high performance computing techniques (i.e., allreduce) along with novel parameter tuning to come up with new implementations of SGD to use both more machines and achieve faster learning.
 
 For a more complete treatment of different forms of parallelisms in deep learning, we refer the reader to the survey by Ben-Nun et al.~\cite{ben-nun18_demys_paral_distr_deep_learn}.
 
@@ -86,7 +86,7 @@ tasks, making it possible for them to invoke methods on that actor.
 \textbf{Actors and SGD}
 The most important role of an actor is to hold state that is expensive to initialize. For SGD, this is the TensorFlow session and GPU context, which take many seconds to create. Since the forward and backward pass for the ResNet101 model can be computed in a few hundred milliseconds, it is impractical for SGD to be implemented in pure task-based systems, e.g. Spark or MapReduce.
 
-For each node, we create a single SGD actor that holds a multi-GPU TensorFlow graph and associated GPU state. Depending on the distributed SGD strategy, additional actors and tasks are used to synchronize gradients between SGD actors. It is important to note that, unlike in MPI and other SPMD frameworks, each actor does not manage its own execution. Rather, \textit{tasks are scheduled onto actors} by a higher-level actor (or a \textit{driver} program) callin actor methods.
+For each node, we create a single SGD actor that holds a multi-GPU TensorFlow graph and associated GPU state. Depending on the distributed SGD strategy, additional actors and tasks are used to synchronize gradients between SGD actors. It is important to note that, unlike in MPI and other SPMD frameworks, each actor does not manage its own execution. Rather, \textit{tasks are scheduled onto actors} by a higher-level actor (or a \textit{driver} program) calling actor methods.
 
 {\bf Tasks.} Tasks more naturally model stateless computations. While it is possible to use tasks in conjunction with actors, in this project we stick with using just actors.
 

@@ -34,7 +34,7 @@ The above discussion assumes Tensor buffers reside on GPUs.  For CPU-owned Tenso
 We emphasize that, the above pipelining optimization is performed at the Ray level.  TensorFlow, the compute engine that launches CUDA kernels onto the GPUs, has implemented such pipelining at the device level.  Specifically, it uses at least 3 CUDA streams to dispatch kernels: a main stream for compute, a host-to-device copy stream, and a device-to-host copy stream.  Therefore, within a device, the communication and computation are already pipelined (up to black-box constraints imposed by the hardware).
 
 
-As seen the above Figure~\ref{fig:pipeline}, all cross network pipelining of computation is handled outside Tensorflow.
+As seen the above Figure~\ref{fig:pipeline}, all cross network pipelining of computation is handled outside TensorFlow.
 
 \subsection{Gradient packing}
 One key ingredient in enabling high performance was packing gradients. Gradient packing occurs after gradient calculation begins, and merges different size arrays from different layers into larger contiguous chunks. These chunks would later on be deconstructed back into the original tensor shapes in order to be applied to the model weights.
