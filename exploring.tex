@@ -68,8 +68,6 @@ apply gradient to model \;
 
 Note that in both cases, the amount of data transferred is constant \textit{per node} and is equal to $2 * N$, where $N$ is the size of the gradient. The total amount of bandwidth consumed scales linearly with the number of nodes.
 
-To understand this, consider ring reduce. For $k$ participants, the gradient buffer is split into $k$ pieces, and each nodes sends and receives $N / k$ bytes over $k$ rounds. In total this means each node sends and receives $2 * N$ bytes.
-
-A similar accounting holds for the parameter server. Each gradient produce must send $N$ bytes to the parameter server, and receive $N$ bytes from the parameter server. If the gradient is sharded into $k$ shards, then the network usage can be balanced evenly across all machines.
+To understand this, consider ring reduce. For $k$ participants, the gradient buffer is split into $k$ pieces, and each nodes sends and receives $N / k$ bytes over $k$ rounds. In total this means each node sends and receives $2 * N$ bytes. A similar accounting holds for the parameter server. Each gradient produce must send $N$ bytes to the parameter server, and receive $N$ bytes from the parameter server. If the gradient is sharded into $k$ shards, then the network usage can be balanced evenly across all machines.
 
 The main tradeoff between the ring reduce and shareded parameter server approach then, is the communication pattern itself. The parameter server requires all-to-all network communication, while ring reduce only requires neighboring nodes to communicate. However at the scales we are dealing with (up to a dozen nodes and a hundred GPUs), this is unlikely to be a bottleneck.
