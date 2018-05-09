@@ -6,3 +6,7 @@ rm -f main.out
 rm -f main.pdf
 rm -f main.xwm
 pdflatex main
+pdflatex main
+bibtex main
+pdflatex main
+pdflatex main
