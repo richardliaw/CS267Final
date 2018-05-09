@@ -13,18 +13,31 @@ To avoid stalling TensorFlow's compute, both ops create their own CUDA streams a
 The above discussion assumes Tensor buffers reside on GPUs.  For CPU-owned Tensors, the strategy is to launch several threads that perform \texttt{memcpy()} on equal-sized chunks.  We note that this is a niche use case for deep learning users.
 
 \subsection{Pipelining Computation with Communication}
-{\color{red} ETC ETC.  We need to say the pipelining optimization is at the Ray level / or for across-node}.
 
 We emphasize that, the above pipelining optimization is performed at the Ray level.  TensorFlow, the compute engine that launches CUDA kernels onto the GPUs, has implemented such pipelining at the device level.  Specifically, it uses at least 3 CUDA streams to dispatch kernels: a main stream for compute, a host-to-device copy stream, and a device-to-host copy stream.  Therefore, within a device, the communication and computation are already pipelined (up to black-box constraints imposed by the hardware).
+
+\begin{figure}
+    \centering
+    % \includegraphics[width=3.1in,keepaspectratio]{fig/sgd_plot.pdf}
+    \includegraphics[width=5.1in,keepaspectratio]{fig/pipeline.pdf}
+    \caption{
+    \small{
+        Pipelining scheme used in our implementation
+    }
+    }
+    \label{fig:pipeline}
+\end{figure}
+As seen the above fig:pipeline {\color{red} TODO: {fixref}}, all cross network pipelining of computation is handled outside Tensorflow.
+
+
 
 \subsection{Gradient packing}
 One key ingredient in enabling high performance was packing gradients. Gradient packing occurs after gradient calculation begins, and merges different size arrays from different layers into larger contiguous chunks. These chunks would later on be deconstructed back into the original tensor shapes in order to be applied to the model weights.
 
-This enabled a couple different minor optimizations. First, it amortized the memory transfer overhead from GPU to Ray's shared memory object store, maximizing throughput. It also was necessary to efficiently saturate the network. On the other hand, the size of the gradient packed could not be too large, as the receiving node would oversaturate, causing an overall slower implementation. In our experiments, we pack into roughly 10MB chunks, resulting in 15 chunks.
+This enabled a couple different minor optimizations. First, it amortized the memory transfer overhead from GPU to Ray's shared memory object store, maximizing throughput. It also was necessary to efficiently saturate the network. On the other hand, the size of the gradient packed could not be too large, as the receiving node would oversaturate, causing an overall slower implementation. In our experiments, we pack into roughly 11MB chunks, resulting in 15 chunks.
 
 \subsection{Parameter Server Sharding and Placement}
-Instead of using a centralized parameter server, we would shard the original model weights into distinct sections. The placement of these shards was important, as misplacement could reduce bandwidth. In our implementation, we make sure all parameter server shards are evenly placed on the nodes.
-
+Instead of using a centralized parameter server, we would shard the original model weights into distinct sections. The placement of these shards was important, as misplacement could reduce bandwidth. In our implementation, we make sure all parameter server shards are evenly placed on the nodes in a round-robin fashion.
 
 \subsection{Scalability Bottlenecks}
 \subsubsection{Network Bandwidth}
