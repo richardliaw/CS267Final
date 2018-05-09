@@ -1,7 +1,7 @@
 \section{Implementation and Optimizations}
 We first started by benchmarking Distributed TF (using its \texttt{distributed\_replicated} mode), and Horovod. We used AWS p3.16xlarge instances for this, and found that Horovod scales as reported to 6k images per second at 64 GPUs (about 93 images per second per GPU). Distributed TF scaled to 6.5k images per second (about 100 images per second per GPU). Note that on a single node, both implementations can achieve around 200 images per second.
 
-We started with the same ResNet101 model as used by the TF benchmarks, and verified that it could also achieve 200 images per second on a single node. The single node case can be understood as just the gradient and NCCL (intra-node) allreduce components seen in FFigure \ref{fig:pipeline}. Our approach for the distributed setting was to use parameter server actors in Ray.
+We started with the same ResNet101 model as used by the TF benchmarks, and verified that it could also achieve 200 images per second on a single node. The single node case can be understood as just the gradient and NCCL (intra-node) allreduce components seen in Figure \ref{fig:pipeline}. Our approach for the distributed setting was to use parameter server actors in Ray.
 
 \begin{figure}
     \centering

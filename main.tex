@@ -53,26 +53,26 @@ For a more complete treatment of different forms of parallelisms in deep learnin
 
 \subsection{Parallelism via Actors and Tasks}
 We implement all experiments in Ray~\cite{ray}, a new distributed execution engine that supports \textit{actors} and \textit{tasks}.  This section briefly describes the two constructs and how they specifically relate to distributed SGD.
-Table~\ref{table:tasks-vs-actors} summarizes the properties of tasks and actors.
+%Table~\ref{table:tasks-vs-actors} summarizes the properties of tasks and actors.
 
-\begin{table}[tbh]
-\begin{center}
-\begin{footnotesize}
-\begin{tabular}{| c | c |}\hline
-{\bf Tasks (stateless)} & {\bf Actors (stateful)} \\\hline
-    Fine-grained load balancing & Coarse-grained load balancing \\\hline
-    Support for object locality & Poor locality support \\\hline
-    High overhead for small updates & Low overhead for small updates \\\hline
-    Efficient failure handling & Overhead from checkpointing \\\hline
-    % Application & light-weight simulations, & training, 3rd party \\
-    %  examples   & input pre-processing  & stateful simulators \\\hline
-\end{tabular}
-\end{footnotesize}
-\end{center}
-\vspace{-0.6cm}
-    \caption{\small{Tasks vs. actors tradeoffs.}}
-\label{table:tasks-vs-actors}
-\end{table}
+%\begin{table}[tbh]
+%\begin{center}
+%\begin{footnotesize}
+%\begin{tabular}{| c | c |}\hline
+%{\bf Tasks (stateless)} & {\bf Actors (stateful)} \\\hline
+%    Fine-grained load balancing & Coarse-grained load balancing \\\hline
+%    Support for object locality & Poor locality support \\\hline
+%    High overhead for small updates & Low overhead for small updates \\\hline
+%    Efficient failure handling & Overhead from checkpointing \\\hline
+%    % Application & light-weight simulations, & training, 3rd party \\
+%    %  examples   & input pre-processing  & stateful simulators \\\hline
+%\end{tabular}
+%\end{footnotesize}
+%\end{center}
+%\vspace{-0.6cm}
+%    \caption{\small{Tasks vs. actors tradeoffs.}}
+%\label{table:tasks-vs-actors}
+%\end{table}
 
 {\bf Actors.} An \emph{actor} is a stateful process. Each actor exposes methods that
 %is a stateful process that exposes a set
@@ -94,6 +94,19 @@ For each node, we create a single SGD actor that holds a multi-GPU TensorFlow gr
 
 % Tasks enable fine-grained load balancing through
 % leveraging load-aware scheduling at task granularity, input data locality, as each task can be scheduled on the node storing its inputs, and low recovery overhead, as there is no need to checkpoint and recover intermediate state. In contrast, actors provide much more efficient fine-grained updates, as these updates are performed on internal rather than external state, which typically requires serialization and deserialization. For example, actors can be used to implement parameter servers~\citep{param-server} and GPU-based iterative computations (e.g., training). In addition, actors can be used to wrap third-party simulators and other opaque handles that are hard to serialize.
+\begin{figure}
+    \centering
+    % \includegraphics[width=3.1in,keepaspectratio]{fig/sgd_plot.pdf}
+    \includegraphics[width=3.1in,keepaspectratio]{fig/pseudocode.png}
+    \caption{
+    \small{
+        Pseudocode of SGD implemented with Ray actors. In contrast with MPI-like
+        programming models, all control flow is managed by the top-level program.
+    }
+    }
+    \label{fig:code}
+\end{figure}
+
 \input{exploring}
 \input{impl}
 \input{eval}
