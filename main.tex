@@ -4,6 +4,9 @@
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath,textcomp,amssymb,geometry,graphicx,enumerate}
 \usepackage[linesnumbered, ruled, noend ]{algorithm2e}
+\SetAlFnt{\small}
+% \SetAlCapFnt{\large}
+% \SetAlCapNameFnt{\large}
 \usepackage{hyperref}       % hyperlinks
 \hypersetup{
     colorlinks=true,
@@ -91,7 +94,6 @@ For each node, we create a single SGD actor that holds a multi-GPU TensorFlow gr
 
 % Tasks enable fine-grained load balancing through
 % leveraging load-aware scheduling at task granularity, input data locality, as each task can be scheduled on the node storing its inputs, and low recovery overhead, as there is no need to checkpoint and recover intermediate state. In contrast, actors provide much more efficient fine-grained updates, as these updates are performed on internal rather than external state, which typically requires serialization and deserialization. For example, actors can be used to implement parameter servers~\citep{param-server} and GPU-based iterative computations (e.g., training). In addition, actors can be used to wrap third-party simulators and other opaque handles that are hard to serialize.
-
 \begin{figure}
     \centering
     % \includegraphics[width=3.1in,keepaspectratio]{fig/sgd_plot.pdf}
@@ -105,13 +107,9 @@ For each node, we create a single SGD actor that holds a multi-GPU TensorFlow gr
     \label{fig:code}
 \end{figure}
 
-\include{exploring}
-\include{impl}
-\include{eval}
-
-
-\section{Future Work}
-{\color{red} TODO}
+\input{exploring}
+\input{impl}
+\input{eval}
 
 
 {
