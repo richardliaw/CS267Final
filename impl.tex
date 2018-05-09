@@ -27,9 +27,7 @@ We emphasize that, the above pipelining optimization is performed at the Ray lev
     }
     \label{fig:pipeline}
 \end{figure}
-As seen the above fig:pipeline {\color{red} TODO: {fixref}}, all cross network pipelining of computation is handled outside Tensorflow.
-
-
+As seen the above Figure~\ref{fig:pipeline}, all cross network pipelining of computation is handled outside Tensorflow.
 
 \subsection{Gradient packing}
 One key ingredient in enabling high performance was packing gradients. Gradient packing occurs after gradient calculation begins, and merges different size arrays from different layers into larger contiguous chunks. These chunks would later on be deconstructed back into the original tensor shapes in order to be applied to the model weights.
