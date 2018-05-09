@@ -4,6 +4,7 @@ Our goal is to match or exceed the performance of current state of the art frame
 
 \textbf{Pseudocode.}
 \begin{algorithm}
+\scriptsize
 \caption{All-Reduce SGD}
 \KwData{Input Data}
 \For{all Nodes (simultaneously)} {
@@ -28,7 +29,7 @@ Barrier\;
 }
 }
 \end{algorithm}
-\clearpage
+% \clearpage
 
 Distributed TensorFlow offers a variety of different distributed SGD implementations. For benchmarking we use a synchronized parameter server to reduce across nodes and an averaging scheme within node across GPUs. The algorithm is roughly as follows:
 
