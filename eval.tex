@@ -3,15 +3,16 @@ All experiments were run on Amazon EC2 using the p3.16xlarge instances.  Each in
 
 \begin{enumerate}
     \item An end-to-end macrobencmark measuring training througput, for all three systems, utilizing up to 16 distinct instances (Figure~\ref{fig:sgd}).
-    \item A microbenchmark that investigates a key limitation of our implementation: that using 8 GPUs per node yields worse scaling than using 4 GPUs per node, keeping the total number of GPUs constant (Figure~\ref{fig:8-vs-4-gpu}).
-    \item A microbenchmark that investigates the best all-reduce strategies to use, within a node (Figure~\ref{fig:intra-node-allreduce-strategy}).
+    \item A microbenchmark that evaluates how how much of a bottleneck the datacenter network between nodes is (Figure~\ref{fig:infnet}).
+    \item A microbenchmark that investigates intra-node allreduce performance. We find that at 8 GPUs per node, intra-node allreduce worse scaling than using 4 GPUs per node, keeping the total number of GPUs constant (Figure~\ref{fig:8-vs-4-gpu}).
+    \item A microbenchmark that investigates the best intra-node all-reduce strategies to use (Figure~\ref{fig:intra-node-allreduce-strategy}).
 \end{enumerate}
 
 % \subsection{Single-Node Multi GPU SGD}
 % Here we discuss some findings on Multi-GPU
 % \subsection{Charts}
 
-\subsection{Macrobenchmark}
+\subsection{End-to-end performance}
 Figure~\ref{fig:sgd} shows the training throughput on ResNet-101 for three systems, Horovod, Distributed TensorFlow, and Ray (codenamed ``Halo'' in the graph).  In summary, our implementation in Ray is able to match Horovod and comes within 10\% of Distributed TensorFlow.  This result validates our hypothesis that the higher-level actor/task abstractions are able to match the SPMD/message-passing abstractions.
 
 {\bf Weak Scaling.}  We note that the weak scaling factors, with 4 GPUs as baseline and with $2\times$ resource scaling at each step, are 1.9$\times$,1.9$\times$,3.7$\times$,7.3$\times$ for Horovod;
@@ -39,7 +40,12 @@ and
     \label{fig:sgd}
 \end{figure}
 
-\subsection{Scaling Anomalies}
+\subsection{Inter-node allreduce}
+To determine how much of a bottleneck the 25Gbps TCP network between nodes is, we run an experiment where all network transfers are replaced by 1-byte "noop" transfers and a sleep of the appropriate delay, thus emulating an idealized network operating at any speed we want it to. Figure \ref{fig:infnet} shows the performance of our SGD implementation with an emulated infinitely fast, 10Gbps, and 5Gbps network.
+
+We find that our results with a 25Gbps network match the idealized 10Gbps network in practice. When using p3.8xl instances, which have a 10Gbps network, the throughput is slightly lower than estimated. This is likely due to inefficiences in the networking stack and the Ray object manager, which prevent full utilization of the network for small transfers.
+
+\subsection{Intra-node allreduce}
 Through our investigation we discovered two interesting scaling anomalies, as
 shown in Figure~\ref{fig:8-vs-4-gpu}.
 
@@ -65,7 +71,10 @@ Streaming Multiprocessor.
 
 The experiment shows that the Simple strategy outperforms NCCL when 4 GPUs per
 node are used, and that the reverse holds true when 8 GPUs per node are
-used. Both provide sublinear scaling.
+used. Both provide sublinear scaling. Based on analysis of Tensorflow timelines, 
+we attribute the poor scalability of NCCL due to a bad interaction with the
+Tensorflow scheduler that unnecessarily delays
+the execution of downstream dependencies of NCCL ops.
 
 % \begin{figure}[t]
 %     \centering
@@ -100,6 +109,17 @@ used. Both provide sublinear scaling.
 
 %     \label{fig:intra-node-allreduce-strategy}
 % \end{figure}
+
+\begin{figure}[tb]
+    \centering
+    \includegraphics[width=5.1in,keepaspectratio]{fig/infnet.png}
+    \caption{
+    \small{
+        Benchmarking our implementation with an infinitely fast emulated network (all transfers are truncated after 1-byte). This demonstrates that an idealized 10Gbps network is enough to match Horovod, and an infinitely fast network would be enough to beat both Horovod and Distributed TF by a significant fraction.
+    }
+    }
+    \label{fig:infnet}
+\end{figure}
 
 
 \begin{figure}
