@@ -49,4 +49,7 @@ Instead of using a centralized parameter server, we would shard the original mod
 With all implementations, throughput dropped nearly 2x when going from one machine to more than one. This is likely due the limited network bandwidth between machines, and possibly extra overhead moving data from GPU to CPU memory. We examine this further in Figure \ref{fig:infnet}.
 
 \subsubsection{Allreduce between GPUs on one machine}
-The AWS p3.16xlarge instances have 8 GPUs, but surprisingly, it is not necessarily the case that more GPUs on a machine will scale better. We found for our scheme, using 4 GPUs per machine provided better scaling per GPU. This was also true for Distributed TF, but not for Horovod. We attribute this to suboptimal implementations of cross-GPU allreduce in TensorFlow (Figure \ref{fig:intranode}). Horovod does not suffer from this problem since it uses ring allreduce across all GPUs individually.
+The AWS p3.16xlarge instances have 8 GPUs, but surprisingly, it is not necessarily the case that more GPUs on a machine will scale better.
+We found for our scheme, using 4 GPUs per machine provided better scaling per GPU.
+This was also true for Distributed TF, but not for Horovod.
+We attribute this to suboptimal implementations of cross-GPU allreduce in TensorFlow (Figure \ref{fig:intra-node-allreduce-strategy}). Horovod does not suffer from this problem since it uses ring allreduce across all GPUs individually.
