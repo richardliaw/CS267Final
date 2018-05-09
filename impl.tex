@@ -1,7 +1,24 @@
 \section{Implementation and Optimizations}
-In order to be achieve competitive levels of throughput, we had to utilize low-level primitives and write custom operators to avoid redundant copies and pipeline stages of the computation. All of our experiments used a Res-Net 101 model consisting of 168 MB of parameter weights. A standard forward pass with 64 images is roughly 40 ms.
+We first started by benchmarking Distributed TF (using its \texttt{distributed\_replicated} mode), and Horovod. We used AWS p3.16xlarge instances for this, and found that Horovod scales as reported to 6k images per second at 64 GPUs (about 93 images per second per GPU). Distributed TF scaled to 6.5k images per second (about 100 images per second per GPU). Note that on a single node, both implementations can achieve around 200 images per second.
+
+We started with the same ResNet101 model as used by the TF benchmarks, and verified that it could also achieve 200 images per second on a single node. The single node case can be understood as just the gradient and NCCL (intra-node) allreduce components seen in FFigure \ref{fig:pipeline}. Our approach for the distributed setting was to use parameter server actors in Ray.
+
+\begin{figure}
+    \centering
+    % \includegraphics[width=3.1in,keepaspectratio]{fig/sgd_plot.pdf}
+    \includegraphics[width=5.1in,keepaspectratio]{fig/pipeline.pdf}
+    \caption{
+    \small{
+        Timeline of distributed SGD with a sharded parameter server implemented in Ray. The computation starts with the forward pass on GPUs. Gradients are produced by the backwards passed and averaged across GPUs via NCCL allreduce. As these intra-node allreduces finish, the averaged gradients are written to Ray's object store (TFToPlasma), where they are averaged across nodes by parameter server actors. The SGD actors then read back the averaged gradients from the parameter server actors (PlasmaToTF) and apply the gradients to their local model replica.
+    }
+    }
+    \label{fig:pipeline}
+\end{figure}
 
 \subsection{Memory Transfer between TensorFlow and Ray}
+
+In order to be achieve competitive levels of throughput, we had to utilize low-level primitives and write custom operators to avoid redundant copies and pipeline stages of the computation. All of our experiments used a Res-Net 101 model consisting of 168 MB of parameter weights. A standard forward pass with 64 images is roughly 40 ms.
+
 The compute engine, TensorFlow, manages all tensor memory buffers within a node.  To communicate tensors (gradients, in the case of SGD) across nodes, we make use of Ray's \textit{distributed object store} component (named Plasma).  Hence, memory transfer must happen between TensorFlow and Ray.
 
 The strawman approach is straightforward.  With \texttt{gradients = sess.run(compute\_op)}, one asks TensorFlow to run calculation and returns a newly allocated \texttt{numpy.ndarray} that resides on host memory.  Then, one could perform \texttt{object\_id = ray.put(gradients)}, which amounts to a host-to-host memory copy---from ndarray to Ray's object store.  The remote nodes can subsequently fetch this object via \texttt{ray.get(object\_id)}.  In total there are three copies: (1) device memory to host memory (\texttt{tf.Tensor} to \texttt{np.ndarray}), (2) host memory to host memory (ndarray to Ray's object store), then (3) across-node communication.
@@ -15,18 +32,6 @@ The above discussion assumes Tensor buffers reside on GPUs.  For CPU-owned Tenso
 \subsection{Pipelining Computation with Communication}
 
 We emphasize that, the above pipelining optimization is performed at the Ray level.  TensorFlow, the compute engine that launches CUDA kernels onto the GPUs, has implemented such pipelining at the device level.  Specifically, it uses at least 3 CUDA streams to dispatch kernels: a main stream for compute, a host-to-device copy stream, and a device-to-host copy stream.  Therefore, within a device, the communication and computation are already pipelined (up to black-box constraints imposed by the hardware).
-
-\begin{figure}
-    \centering
-    % \includegraphics[width=3.1in,keepaspectratio]{fig/sgd_plot.pdf}
-    \includegraphics[width=5.1in,keepaspectratio]{fig/pipeline.pdf}
-    \caption{
-    \small{
-        Pipelining scheme used in our implementation
-    }
-    }
-    \label{fig:pipeline}
-\end{figure}
 As seen the above fig:pipeline {\color{red} TODO: {fixref}}, all cross network pipelining of computation is handled outside Tensorflow.
 
 
