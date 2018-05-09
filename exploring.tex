@@ -1,0 +1,75 @@
+\section{Exploring Distributed TensorFlow and Horovod}
+
+Our goal is to match or exceed the performance of current state of the art frameworks. Horovod is a popular distributed SGD implementation which claims near linear scalability to 128 GPUs. They do this by leveraging the ring-allreduce algorithm to synchronize gradients between workers. The algorithm is roughly as follows:
+
+\textbf{Pseudocode.}
+\begin{algorithm}
+\caption{All-Reduce SGD}
+\KwData{Input Data}
+\For{all Nodes (simultaneously)} {
+\For{all GPUs (simultaneously)}{
+    instantiate data\;
+    instantiate model replica\;
+}
+}
+Barrier\;
+
+\For{all Nodes (simultaneously)} {
+\For{all GPUs (simultaneously)}{
+    compute gradient based on data\;
+    allreduce(gradient)\;
+}
+}
+
+
+\For{all Nodes (simultaneously)} {
+\For{all GPUs (simultaneously)}{
+    apply gradient to model\;
+}
+}
+\end{algorithm}
+\clearpage
+
+Distributed TensorFlow offers a variety of different distributed SGD implementations. For benchmarking we use a synchronized parameter server to reduce across nodes and an averaging scheme within node across GPUs. The algorithm is roughly as follows:
+
+\textbf{Pseudocode.}
+\begin{algorithm}
+\caption{Synchronous Parameter Server SGD}
+\KwData{Input Data, K Nodes}
+\For{all Nodes (simultaneously)} {
+\For{all GPUs (simultaneously)}{
+    instantiate data\;
+    instantiate model replica\;
+}
+}
+generate N parameter server shards\;
+\For{each shard in the N shards} {
+    start parameter server on a different node \;
+}
+Barrier\;
+\For{all Nodes (simultaneously)} {
+\For{all GPUs (simultaneously)}{
+    compute gradient based on data\;
+    allreduce(gradient) on node\;
+}
+send shard of gradient to corresponding parameter server \;
+wait for aggregated gradient \;
+apply gradient to model \;
+}
+\For{all Parameter servers (simultaneously)}{
+    \While {number of gradient shards $<$ K\;}{
+        wait for gradient shard\;
+    }
+
+    aggregate all gradients\;
+    broadcast gradients back to workers\;
+}
+\end{algorithm}
+
+Note that in both cases, the amount of data transferred is constant \textit{per node} and is equal to $2 * N$, where $N$ is the size of the gradient. The total amount of bandwidth consumed scales linearly with the number of nodes.
+
+To understand this, consider ring reduce. For $k$ participants, the gradient buffer is split into $k$ pieces, and each nodes sends and receives $N / k$ bytes over $k$ rounds. In total this means each node sends and receives $2 * N$ bytes.
+
+A similar accounting holds for the parameter server. Each gradient produce must send $N$ bytes to the parameter server, and receive $N$ bytes from the parameter server. If the gradient is sharded into $k$ shards, then the network usage can be balanced evenly across all machines.
+
+The main tradeoff between the ring reduce and shareded parameter server approach then, is the communication pattern itself. The parameter server requires all-to-all network communication, while ring reduce only requires neighboring nodes to communicate. However at the scales we are dealing with (up to a dozen nodes and a hundred GPUs), this is unlikely to be a bottleneck.
