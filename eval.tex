@@ -15,10 +15,10 @@ All experiments were run on Amazon EC2 using the p3.16xlarge instances.  Each in
 \subsection{Macrobenchmark}
 Figure~\ref{fig:sgd} shows the training throughput on ResNet-101 for three systems, Horovod, Distributed TensorFlow, and Ray (codenamed ``Halo'' in the graph).  In summary, our implementation in Ray is able to match Horovod and comes within 10\% of Distributed TensorFlow.  This result validates our hypothesis that the higher-level actor/task abstractions are able to match the SPMD/message-passing abstractions.
 
-{\bf Weak Scaling.}  We note that the weak scaling factors, with 4 GPUs as baseline and with $2\times$ resource scaling, are 1.9$\times$,1.9$\times$,3.7$\times$,7.3$\times$ for Horovod;
+{\bf Weak Scaling.}  We note that the weak scaling factors, with 4 GPUs as baseline and with $2\times$ resource scaling at each step, are 1.9$\times$,1.9$\times$,3.7$\times$,7.3$\times$ for Horovod;
 1.8$\times$,2.7$\times$,5.0$\times$,8.5$\times$ for Distributed TensorFlow;
 and
-1.8$\times$,2.2$\times$,4.1$\times$,7.3$\times$ for Ray.  We believe th
+1.8$\times$,2.2$\times$,4.1$\times$,7.3$\times$ for Ray.  Clearly, even the observed maximum 8.5$\times$ scaling  is far from ideal since $16\times$ as many GPUs are used; we surmise this is the exact reason that motivated several projects that investigate fast inter-GPUs interconnect, such as  NVIDIA's NVLink.
 
 \begin{figure}
     \centering
@@ -36,11 +36,26 @@ and
         due to hardware differences and
         recent TensorFlow performance improvements. We used
         OpenMPI 3.0, TF 1.8, and NCCL2 for all runs.
-        {\color{red} TODO: replace Halo with Ray.}
     }
     }
     \label{fig:sgd}
 \end{figure}
+
+\subsection{Scaling Anomalies}
+Through our investigation we discovered two interesting scaling anomalies, as
+shown in Figure~\ref{fig:8-vs-4-gpu}.
+
+First, one of the compared systems, Horovod, yields a lower throughput when 16
+GPUs (2 nodes) are used, compared to 8 GPUs (1 node).  This suggests that
+Horovod's cross-machine communication overhead is so large that it dwarfs the
+benefits of using twice as many processors.
+
+Second, for our Ray implementation, using 8 GPUs per node (red bars) scales
+noticeably worse than using 4 GPUs per node (blue bars), while fixing the total
+number of GPUs fixed.  The former cases make use of less number of machines, so
+cross-node communication should actually be faster than the latter cases.  For
+this reason, we hypothesize that the bottleneck stems from the intra-node
+codepath.
 
 \begin{figure}
     \centering
